@@ -1,13 +1,15 @@
 import tkinter as tk
 import time
 import sqlite3
+from datetime import datetime, timedelta
 
 class TimeTrackerApp:
-    timer_categories = ["Coding", "Study", "Personal"]
-    timer_thresholds = [180, 120, 60]
+    timer_thresholds = [10800, 7200, 3600]
+    current_db = 'time-tracker.db'
+    # current_db = 'time-tracker-dev.db'
 
     def load_initial_timers(self):
-        connection = sqlite3.connect('time-tracker.db')
+        connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
         cursor.execute("SELECT task, time_spent FROM timers WHERE date = ?", (time.strftime("%Y-%m-%d"),))
         timers = cursor.fetchall()
@@ -26,6 +28,44 @@ class TimeTrackerApp:
             self.elapsed_time[i] = time_spent
             self.update_timer(i)
 
+    def load_task_completion(self, task_name):
+        connection = sqlite3.connect(self.current_db)
+        cursor = connection.cursor()
+        current_month = datetime.now().strftime("%Y-%m")
+        cursor.execute("SELECT date FROM timers WHERE task = ? AND completed = 1 AND date LIKE ?", (task_name, f"{current_month}-%"))
+        completed_days = [int(date[0].split("-")[2]) for date in cursor.fetchall()]
+        connection.close()
+
+        # return completion
+        today = datetime.today()
+        start_date = today.replace(day=1)
+        days_in_month = (today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1)).day
+        
+        # Fake data for testing (Replace with real DB query)
+        # completed_days = {1, 3, 7, 10, 15, 20, 25}  # Example completed days
+        
+        return [day in completed_days for day in range(1, days_in_month + 1)]
+
+
+    # Draw the recap
+    def draw_recap(self, task_name, canvas):
+        data = self.load_task_completion(task_name)
+        rows, cols = 5, 7  # Approximate week layout
+        square_size = 18
+        padding = 3
+
+        current_month = datetime.now().month
+        total_month_day = 31 if current_month in [1, 3, 5, 7, 8, 10, 12] else 30 if current_month in [4, 6, 9, 11] else 28
+
+        for i, completed in enumerate(data):
+            if i <= total_month_day:
+                row, col = divmod(i, cols)
+                x0, y0 = col * (square_size + padding) + 2, row * (square_size + padding) + 2
+                x1, y1 = x0 + square_size, y0 + square_size
+                color = "green" if completed else None
+                canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
+
+
     def save_timer(self, i):
         task = self.timer_categories[i]
         expected_duration = self.timer_thresholds[i]
@@ -34,7 +74,7 @@ class TimeTrackerApp:
         completed = 1 if self.elapsed_time[i] >= expected_duration else 0
         
         # check if there is an existing timer for today for this category
-        connection = sqlite3.connect('time-tracker.db')
+        connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
         cursor.execute("SELECT id FROM timers WHERE task = ? AND date = ?", (task, date))
         timer_id = cursor.fetchone()
@@ -42,7 +82,7 @@ class TimeTrackerApp:
 
         if timer_id:
             try:
-                connection = sqlite3.connect('time-tracker.db')
+                connection = sqlite3.connect(self.current_db)
                 cursor = connection.cursor()
 
                 cursor.execute("""
@@ -56,7 +96,7 @@ class TimeTrackerApp:
                 raise Exception(f"Errore durante il salvataggio del timer")
         else:
             try:
-                connection = sqlite3.connect('time-tracker.db')
+                connection = sqlite3.connect(self.current_db)
                 cursor = connection.cursor()
 
                 cursor.execute("""
@@ -106,6 +146,7 @@ class TimeTrackerApp:
             self.root.after(1000, lambda: self.update_timer(i))  # Update every 1000ms
 
     def __init__(self, root):
+        self.create_test_tables()
         self.root = root
         self.root.title("Time Tracker")
         root.title("Time Tracker")
@@ -120,6 +161,11 @@ class TimeTrackerApp:
         self.label_coding_timer.grid(row=1, column=0, columnspan=2)
         tk.Button(self.frame_coding, text="Start", command=lambda: self.start_timer(0)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_coding, text="Stop", command=lambda: self.stop_timer(0)).grid(row=2, column=1,  sticky="nsew")
+        canvas_coding = tk.Canvas(self.frame_coding)
+        canvas_coding.update_idletasks()
+        canvas_coding.config(width=160, height=98)
+        canvas_coding.grid(row=3, column=0, columnspan=2, pady=5, sticky="nsew")
+        self.draw_recap("Coding", canvas_coding)
 
         self.frame_study = tk.Frame(bd=2, relief="groove")
         self.frame_study.grid(row=1, column=0, sticky="nsew", padx=5, pady=5,)
@@ -128,6 +174,11 @@ class TimeTrackerApp:
         self.label_study_timer.grid(row=1, column=0, columnspan=2)
         tk.Button(self.frame_study, text="Start", command=lambda: self.start_timer(1)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_study, text="Stop", command=lambda: self.stop_timer(1)).grid(row=2, column=1,  sticky="nsew")
+        canvas_study = tk.Canvas(self.frame_study)
+        canvas_study.update_idletasks()
+        canvas_study.config(width=160, height=98)
+        canvas_study.grid(row=3, column=0, columnspan=2, pady=5, sticky="nsew")
+        self.draw_recap("Study", canvas_study)
 
         self.frame_personal = tk.Frame(bd=2, relief="groove")
         self.frame_personal.grid(row=2, column=0, sticky="nsew", padx=5, pady=5,)
@@ -136,12 +187,16 @@ class TimeTrackerApp:
         self.label_personal_timer.grid(row=1, column=0, columnspan=2)
         tk.Button(self.frame_personal, text="Start", command=lambda: self.start_timer(2)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_personal, text="Stop", command=lambda: self.stop_timer(2)).grid(row=2, column=1,  sticky="nsew")
+        canvas_personal = tk.Canvas(self.frame_personal)
+        canvas_personal.update_idletasks()
+        canvas_personal.config(width=160, height=98)
+        canvas_personal.grid(row=3, column=0, columnspan=2, pady=5, sticky="nsew")
+        self.draw_recap("Personal", canvas_personal)
 
-        self.create_test_tables()
         self.load_initial_timers()
 
     def create_test_tables(self):
-        connection = sqlite3.connect('time-tracker.db')
+        connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS timers (
                             id INTEGER PRIMARY KEY,
@@ -151,6 +206,15 @@ class TimeTrackerApp:
                             time_spent INTEGER NOT NULL,
                             completed INTEGER NOT NULL
                         )''')
+        
+        if self.current_db == 'time-tracker-dev.db':
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Coding", 10800, "2025-02-01", 0, 1)''')
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Study", 7200, "2025-02-02", 0, 1)''')   
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Personal", 3600, "2025-02-03", 0, 1)''') 
+        
         connection.commit()
         connection.close()
 
