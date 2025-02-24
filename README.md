@@ -19,9 +19,13 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
 
 - represent non-working day (eg. saturdays and sundays) in a different color
 
-## possible further feature
+## v1.3.0
+
+- represent partially completed day with different colors (eg. >25% of the expected time, >50%, >75%);
+- fix a bug with data saving
+
+## possible further features
 
 - configurable categories (with custom thresholds), the GUI should be build dynamically and all of the reference to the labels should be dynamic too;
-- time triking over multiple days (overnight work)
-- represent partially completed day with different colors (eg. >25% of the expected time, >50%, >75%)
+- time triking over multiple days (overnight work);
 - excel export;

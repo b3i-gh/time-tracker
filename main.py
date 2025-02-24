@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 class TimeTrackerApp:
     timer_thresholds = [10800, 7200, 3600]
-    current_db = 'time-tracker.db'
-    # current_db = 'time-tracker-dev.db'
+    # current_db = 'time-tracker.db'
+    current_db = 'time-tracker-dev.db'
 
     def load_initial_timers(self):
         connection = sqlite3.connect(self.current_db)
@@ -28,47 +28,56 @@ class TimeTrackerApp:
             self.elapsed_time[i] = time_spent
             self.update_timer(i)
 
-    def load_task_completion(self, task_name):
+    def load_monthly_tasks(self, task_name):
         connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
         current_month = datetime.now().strftime("%Y-%m")
-        cursor.execute("SELECT date FROM timers WHERE task = ? AND completed = 1 AND date LIKE ?", (task_name, f"{current_month}-%"))
-        completed_days = [int(date[0].split("-")[2]) for date in cursor.fetchall()]
+        cursor.execute("SELECT date, expected_duration, time_spent, completed FROM timers WHERE task = ? AND date LIKE ?", (task_name, f"{current_month}-%"))
+        data = cursor.fetchall()
+        data = {int(row[0].split("-")[2]): row for row in data}
         connection.close()
+        return data
 
-        # return completion
-        today = datetime.today()
-        start_date = today.replace(day=1)
-        days_in_month = (today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1)).day
-        
-        return [day in completed_days for day in range(1, days_in_month + 1)]
-
-
+      
     # Draw the recap
     def draw_recap(self, task_name, canvas):
-        data = self.load_task_completion(task_name)
-        rows, cols = 5, 7  # Approximate week layout
+        data = self.load_monthly_tasks(task_name)
+
+        cols = 7 
         square_size = 18
         padding = 3
-
+        
         current_month = datetime.now().month
         total_month_day = 31 if current_month in [1, 3, 5, 7, 8, 10, 12] else 30 if current_month in [4, 6, 9, 11] else 28
 
-        for i, completed in enumerate(data):
-            if i <= total_month_day:
-                row, col = divmod(i, cols)
-                x0, y0 = col * (square_size + padding) + 2, row * (square_size + padding) + 2
-                x1, y1 = x0 + square_size, y0 + square_size
-                
-                day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
-                if day_of_week == 5 or day_of_week == 6:
-                    color = "grey"
-                elif completed:
-                    color = "green"
-                else: 
-                    color = None
+        for i in range(total_month_day):
+            curr_day_data = data[i+1] if i+1 in data else None
+            expected_duration = curr_day_data[1] if curr_day_data else 0
+            time_spent = curr_day_data[2] if curr_day_data else 0
+            progress = time_spent / expected_duration * 100 if time_spent > 0 else 0
+            completed = curr_day_data[3] if curr_day_data else 0
 
-                canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
+
+            row, col = divmod(i, cols)
+            x0, y0 = col * (square_size + padding) + 2, row * (square_size + padding) + 2
+            x1, y1 = x0 + square_size, y0 + square_size
+            
+            day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
+            
+            if completed:
+                color = "#1bfc02"
+            elif progress > 75:
+                color = "#5af948"
+            elif progress > 50:
+                color = "#8df981"
+            elif progress > 25:
+                color = "#b8f9b1"
+            elif day_of_week == 5 or day_of_week == 6:
+                color = "grey"
+            else:
+                color = None
+
+            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
 
 
     def save_timer(self, i):
@@ -203,7 +212,10 @@ class TimeTrackerApp:
     def create_test_tables(self):
         connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS timers (
+
+        if self.current_db == 'time-tracker-dev.db':
+            cursor.execute('''DROP TABLE timers''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS timers (
                             id INTEGER PRIMARY KEY,
                             task TEXT NOT NULL,
                             expected_duration INTEGER NOT NULL,
@@ -211,14 +223,20 @@ class TimeTrackerApp:
                             time_spent INTEGER NOT NULL,
                             completed INTEGER NOT NULL
                         )''')
-        
-        if self.current_db == 'time-tracker-dev.db':
             cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
-                          VALUES ("Coding", 10800, "2025-02-01", 0, 1)''')
+                          VALUES ("Coding", 10800, "2025-02-01", 5213, 0)''')
             cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
-                          VALUES ("Study", 7200, "2025-02-02", 0, 1)''')   
+                          VALUES ("Coding", 10800, "2025-02-03", 8213, 0)''')
             cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
-                          VALUES ("Personal", 3600, "2025-02-03", 0, 1)''') 
+                          VALUES ("Study", 7200, "2025-02-02", 4500, 0)''')   
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Personal", 3600, "2025-02-03", 3600, 1)''') 
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Personal", 3600, "2025-02-04", 3500, 0)''') 
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Personal", 3600, "2025-02-05", 1900, 0)''') 
+            cursor.execute('''INSERT OR IGNORE INTO timers (task, expected_duration, date, time_spent, completed)
+                          VALUES ("Personal", 3600, "2025-02-06", 1000, 0)''') 
         
         connection.commit()
         connection.close()
