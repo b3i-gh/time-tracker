@@ -41,9 +41,6 @@ class TimeTrackerApp:
         start_date = today.replace(day=1)
         days_in_month = (today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1)).day
         
-        # Fake data for testing (Replace with real DB query)
-        # completed_days = {1, 3, 7, 10, 15, 20, 25}  # Example completed days
-        
         return [day in completed_days for day in range(1, days_in_month + 1)]
 
 
@@ -62,7 +59,15 @@ class TimeTrackerApp:
                 row, col = divmod(i, cols)
                 x0, y0 = col * (square_size + padding) + 2, row * (square_size + padding) + 2
                 x1, y1 = x0 + square_size, y0 + square_size
-                color = "green" if completed else None
+                
+                day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
+                if day_of_week == 5 or day_of_week == 6:
+                    color = "grey"
+                elif completed:
+                    color = "green"
+                else: 
+                    color = None
+
                 canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
 
 
