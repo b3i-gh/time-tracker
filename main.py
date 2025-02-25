@@ -77,7 +77,12 @@ class TimeTrackerApp:
             else:
                 color = None
 
-            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
+            outline = "black"
+            ow = 1
+            if i+1 == datetime.now().day:
+                outline = "red"
+                ow = 2
+            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline=outline, width=ow)
 
 
     def save_timer(self, i):
