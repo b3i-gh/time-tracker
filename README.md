@@ -29,10 +29,16 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
 
 - update the montly recap as soon as a task is completed (or a percentage is reached)
 
+## v1.5.0
+
+- added +5'/+10'/-5'/-10' buttons to the timers
+
 
 ## possible further features
 
-- configurable categories (with custom thresholds), the GUI should be build dynamically and all of the reference to the labels should be dynamic too;
+- view the tracks for previous months
 - time triking over multiple days (overnight work);
+- mark as completed/incomplete clicking on past days
+- configurable categories (with custom thresholds), the GUI should be build dynamically and all of the reference to the labels should be dynamic too;
 - excel export;
 

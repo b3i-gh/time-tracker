@@ -141,8 +141,12 @@ class TimeTrackerApp:
             self.elapsed_time[i] = time.time() - self.start_time[i]
             self.save_timer(i)
 
-    def update_timer(self, i):
-        self.elapsed_time[i] = time.time() - self.start_time[i]
+    def update_timer(self, i, elapsed_time=None):
+        starting_time = self.start_time[i] if self.start_time[i] else 0
+        if elapsed_time != None:
+            self.elapsed_time[i] = elapsed_time
+        else:
+            self.elapsed_time[i] = time.time() - starting_time
         minutes, seconds = divmod(int(self.elapsed_time[i]), 60)
         hours, minutes = divmod(minutes, 60)
         updated_timer=f"{hours:02}:{minutes:02}:{seconds:02}"
@@ -177,6 +181,33 @@ class TimeTrackerApp:
         if self.running[i]:
             self.root.after(1000, lambda: self.update_timer(i))  # Update every 1000ms
 
+    def add_time(self, minutes, i):
+        if self.elapsed_time[i] + minutes * 60 >= 0:
+            self.elapsed_time[i] += minutes * 60
+            self.update_timer(i, self.elapsed_time[i])
+            self.save_timer(i)
+    
+    def do_popup(self, event):
+        widget = event.widget
+        if widget == self.label_coding_timer:
+            i = 0
+        elif widget == self.label_study_timer:
+            i = 1
+        elif widget == self.label_personal_timer:
+            i = 2
+
+        if not self.running[i]:
+            m = tk.Menu(self.root, tearoff = 0)
+            m.add_command(label="+5m", command=lambda: self.add_time(5, i))
+            m.add_command(label="+10m", command=lambda: self.add_time(10, i))
+            m.add_separator()
+            m.add_command(label="-5m", command=lambda: self.add_time(-5, i))
+            m.add_command(label="-10m", command=lambda: self.add_time(-10, i))
+            try:
+                m.tk_popup(event.x_root, event.y_root)
+            finally:
+                m.grab_release()
+
     def __init__(self, root):
         self.create_test_tables()
         self.root = root
@@ -192,6 +223,7 @@ class TimeTrackerApp:
         tk.Label(self.frame_coding, text="Coding (180m)", font=("Helvetica", 10), ).grid(row=0, column=0, pady=5, sticky="nw", columnspan=2)
         self.label_coding_timer = tk.Label(self.frame_coding, text="00:00:00", font=("Arial", 30), bg="white")
         self.label_coding_timer.grid(row=1, column=0, columnspan=2)
+        self.label_coding_timer.bind("<Button-3>", self.do_popup)
         tk.Button(self.frame_coding, text="Start", command=lambda: self.start_timer(0)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_coding, text="Stop", command=lambda: self.stop_timer(0)).grid(row=2, column=1,  sticky="nsew")
         canvas_coding = tk.Canvas(self.frame_coding)
@@ -205,6 +237,7 @@ class TimeTrackerApp:
         tk.Label(self.frame_study, text="Study (120m)", font=("Helvetica", 10), ).grid(row=0, column=0, pady=5, sticky="nw", columnspan=2)
         self.label_study_timer = tk.Label(self.frame_study, text="00:00:00", font=("Arial", 30), bg="white")
         self.label_study_timer.grid(row=1, column=0, columnspan=2)
+        self.label_study_timer.bind("<Button-3>", self.do_popup)
         tk.Button(self.frame_study, text="Start", command=lambda: self.start_timer(1)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_study, text="Stop", command=lambda: self.stop_timer(1)).grid(row=2, column=1,  sticky="nsew")
         canvas_study = tk.Canvas(self.frame_study)
@@ -218,6 +251,7 @@ class TimeTrackerApp:
         tk.Label(self.frame_personal, text="Personal (60m)", font=("Helvetica", 10), ).grid(row=0, column=0, pady=5, sticky="nw", columnspan=2)
         self.label_personal_timer = tk.Label(self.frame_personal, text="00:00:00", font=("Arial", 30), bg="white")
         self.label_personal_timer.grid(row=1, column=0, columnspan=2)
+        self.label_personal_timer.bind("<Button-3>", self.do_popup)
         tk.Button(self.frame_personal, text="Start", command=lambda: self.start_timer(2)).grid(row=2, column=0, sticky="nsew")
         tk.Button(self.frame_personal, text="Stop", command=lambda: self.stop_timer(2)).grid(row=2, column=1,  sticky="nsew")
         canvas_personal = tk.Canvas(self.frame_personal)
