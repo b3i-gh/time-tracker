@@ -165,6 +165,7 @@ class TimeTrackerApp:
         self.root.title("Time Tracker")
         root.title("Time Tracker")
         self.running = [False, False, False]
+        self.timer_categories = ["Coding", "Study", "Personal"]
         self.elapsed_time = [0, 0, 0]
         self.start_time = [None, None, None]
 

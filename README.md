@@ -23,9 +23,15 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
 
 - represent partially completed day with different colors (eg. >25% of the expected time, >50%, >75%);
 - fix a bug with data saving
+- current day in the recap should have a thicker border
+
+## v1.4.0
+
+- update the montly recap as soon as a task is completed (or a percentage is reached)
 
 ## possible further features
 
 - configurable categories (with custom thresholds), the GUI should be build dynamically and all of the reference to the labels should be dynamic too;
 - time triking over multiple days (overnight work);
 - excel export;
+
