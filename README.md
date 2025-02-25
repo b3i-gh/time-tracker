@@ -29,6 +29,7 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
 
 - update the montly recap as soon as a task is completed (or a percentage is reached)
 
+
 ## possible further features
 
 - configurable categories (with custom thresholds), the GUI should be build dynamically and all of the reference to the labels should be dynamic too;

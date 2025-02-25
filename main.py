@@ -51,13 +51,13 @@ class TimeTrackerApp:
         
         day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
         
-        if progress >= 4:
+        if progress >= 100:
             color = "#1bfc02"
-        elif progress > 3:
+        elif progress > 75:
             color = "#5af948"
-        elif progress > 2:
+        elif progress > 50:
             color = "#8df981"
-        elif progress > 1:
+        elif progress > 25:
             color = "#b8f9b1"
         elif day_of_week == 5 or day_of_week == 6:
             color = "grey"
