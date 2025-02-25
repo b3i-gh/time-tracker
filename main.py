@@ -8,6 +8,11 @@ class TimeTrackerApp:
     # current_db = 'time-tracker.db'
     current_db = 'time-tracker-dev.db'
 
+    track_cols = 7 
+    track_square_size = 18
+    track_square_padding = 3
+
+
     def load_initial_timers(self):
         connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
@@ -32,21 +37,44 @@ class TimeTrackerApp:
         connection = sqlite3.connect(self.current_db)
         cursor = connection.cursor()
         current_month = datetime.now().strftime("%Y-%m")
-        cursor.execute("SELECT date, expected_duration, time_spent, completed FROM timers WHERE task = ? AND date LIKE ?", (task_name, f"{current_month}-%"))
+        cursor.execute("SELECT date, expected_duration, time_spent FROM timers WHERE task = ? AND date LIKE ?", (task_name, f"{current_month}-%"))
         data = cursor.fetchall()
         data = {int(row[0].split("-")[2]): row for row in data}
         connection.close()
         return data
 
-      
-    # Draw the recap
+    # Draw a square in the track
+    def draw_track_square(self, i, progress, canvas):
+        row, col = divmod(i, self.track_cols)
+        x0, y0 = col * (self.track_square_size + self.track_square_padding) + 2, row * (self.track_square_size + self.track_square_padding) + 2
+        x1, y1 = x0 + self.track_square_size, y0 + self.track_square_size
+        
+        day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
+        
+        if progress >= 4:
+            color = "#1bfc02"
+        elif progress > 3:
+            color = "#5af948"
+        elif progress > 2:
+            color = "#8df981"
+        elif progress > 1:
+            color = "#b8f9b1"
+        elif day_of_week == 5 or day_of_week == 6:
+            color = "grey"
+        else:
+            color = None
+
+        outline = "black"
+        ow = 1
+        if i+1 == datetime.now().day:
+            outline = "red"
+            ow = 2
+        canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline=outline, width=ow) 
+
+    # Draw the recap track 
     def draw_recap(self, task_name, canvas):
         data = self.load_monthly_tasks(task_name)
 
-        cols = 7 
-        square_size = 18
-        padding = 3
-        
         current_month = datetime.now().month
         total_month_day = 31 if current_month in [1, 3, 5, 7, 8, 10, 12] else 30 if current_month in [4, 6, 9, 11] else 28
 
@@ -55,35 +83,8 @@ class TimeTrackerApp:
             expected_duration = curr_day_data[1] if curr_day_data else 0
             time_spent = curr_day_data[2] if curr_day_data else 0
             progress = time_spent / expected_duration * 100 if time_spent > 0 else 0
-            completed = curr_day_data[3] if curr_day_data else 0
-
-
-            row, col = divmod(i, cols)
-            x0, y0 = col * (square_size + padding) + 2, row * (square_size + padding) + 2
-            x1, y1 = x0 + square_size, y0 + square_size
+            self.draw_track_square(i, progress, canvas)
             
-            day_of_week = (datetime.today().replace(day=1) + timedelta(days=i)).weekday()
-            
-            if completed:
-                color = "#1bfc02"
-            elif progress > 75:
-                color = "#5af948"
-            elif progress > 50:
-                color = "#8df981"
-            elif progress > 25:
-                color = "#b8f9b1"
-            elif day_of_week == 5 or day_of_week == 6:
-                color = "grey"
-            else:
-                color = None
-
-            outline = "black"
-            ow = 1
-            if i+1 == datetime.now().day:
-                outline = "red"
-                ow = 2
-            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline=outline, width=ow)
-
 
     def save_timer(self, i):
         task = self.timer_categories[i]
@@ -156,10 +157,22 @@ class TimeTrackerApp:
         label.config(text=updated_timer)
 
         # Change style if the task is completed
-        if self.elapsed_time[i] > self.timer_thresholds[i]:
+        expected_duration = self.timer_thresholds[i]
+        time_spent = self.elapsed_time[i]
+        if time_spent > expected_duration:
             label.config(bg="green", fg="white")
         else:
             label.config(bg="white", fg="black")
+
+        progress = time_spent / expected_duration * 100 if time_spent > 0 else 0
+        canvas = None
+        if i == 0:
+            canvas = self.frame_coding.winfo_children()[4]
+        elif i == 1:
+            canvas = self.frame_study.winfo_children()[4]
+        elif i == 2:
+            canvas = self.frame_personal.winfo_children()[4]
+        self.draw_track_square(datetime.now().day-1, progress, canvas)
 
         if self.running[i]:
             self.root.after(1000, lambda: self.update_timer(i))  # Update every 1000ms
