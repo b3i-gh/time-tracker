@@ -1,0 +1,16 @@
+# Build directories
+build/
+dist/
+
+# IDE and editor files
+.idea/
+.vscode/
+
+# Dependencies
+node_modules/
+
+# Compiled output
+*.log
+*.spec
+*.pyc
+*.pyo
