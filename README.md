@@ -10,34 +10,40 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
 
 `dbManager = DatabaseManager(False)`
 
-## v1.0.0
+## Screenshots
+
+![Time Tracker Screenshot](assets/Screenshot01.png)
+
+## Versions
+
+### v1.0.0
 
 - keeps track of 3 default categories;
 - saves the timers of each day on a local database;
 
-## v1.1.0
+### v1.1.0
 
 - monthly tracking for each category with a visual recap of daily completed tasks;
 
-## v1.2.0
+### v1.2.0
 
 - represent non-working day (eg. saturdays and sundays) in a different color;
 
-## v1.3.0
+### v1.3.0
 
 - represent partially completed day with different colors (eg. >25% of the expected time, >50%, >75%);
 - fix a bug with data saving;
 - current day in the recap should have a thicker border;
 
-## v1.4.0
+### v1.4.0
 
 - update the montly recap as soon as a task is completed (or a percentage is reached);
 
-## v1.5.0
+### v1.5.0
 
 - added +5'/+10'/-5'/-10' buttons to the timers;
 
-## v2.0.0
+### v2.0.0
 
 - refactoring:
 
@@ -51,7 +57,7 @@ You can customize the tracked tasks by modifying timer_categories and timer_thre
   - clicking on the date label on the recap, the selected date will return to the current one;
   - only the current day timer can be modified (by starting/stoping or adding/removing minutes). The previous day timer is also editable in order to correct previous entries or allow overnight work;
 
-## possible further features
+### possible further features
 
 - weekly and monthly statistics
 - time spent and progress for each day (for the task) on mouse over each day of the recap canvas
